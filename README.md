@@ -1,3 +1,6 @@
+# Modified! LPD8806 LED driver library for Adafruit Trinket (and probably Gemma) #
+This is a fork of Adafruit's library. The only changes are the removal of hardware SPI functionality.
+
 # Arduino library for LPD8806 #
 This Library was written for the LPD8806 PWM LED driver chips, strips and pixels.
 But the LPD8803/LPD8809 will probably work too.
