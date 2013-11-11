@@ -64,8 +64,10 @@ a 'latch' anyway.
   Tested.  Confirmed.  Fact.
 */
 
+/* altered by AKA 11/8/2013 to bit-bang only, allowing it to compile for Adafruit Trinket */
 
-#include "SPI.h"
+
+// #include "SPI.h"
 #include "LPD8806.h"
 
 /*****************************************************************************/
@@ -95,22 +97,21 @@ LPD8806::LPD8806(void) {
   numLEDs = numBytes = 0;
   pixels  = NULL;
   begun   = false;
-  updatePins(); // Must assume hardware SPI until pins are set
+  // updatePins(); // Must assume hardware SPI until pins are set
 }
 
 // Activate hard/soft SPI as appropriate:
 void LPD8806::begin(void) {
-  if(hardwareSPI == true) startSPI();
-  else                    startBitbang();
+  startBitbang();
   begun = true;
 }
 
 // Change pin assignments post-constructor, switching to hardware SPI:
 void LPD8806::updatePins(void) {
-  hardwareSPI = true;
-  datapin     = clkpin = 0;
-  // If begin() was previously invoked, init the SPI hardware now:
-  if(begun == true) startSPI();
+  // hardwareSPI = true;
+  // datapin     = clkpin = 0;
+  // // If begin() was previously invoked, init the SPI hardware now:
+  // if(begun == true) startSPI();
   // Otherwise, SPI is NOT initted until begin() is explicitly called.
 
   // Note: any prior clock/data pin directions are left as-is and are
@@ -134,7 +135,7 @@ void LPD8806::updatePins(uint8_t dpin, uint8_t cpin) {
 
   if(begun == true) { // If begin() was previously invoked...
     // If previously using hardware SPI, turn that off:
-    if(hardwareSPI == true) SPI.end();
+    // if(hardwareSPI == true) SPI.end();
     startBitbang(); // Regardless, now enable 'soft' SPI outputs
   } // Otherwise, pins are not set to outputs until begin() is called.
 
@@ -150,29 +151,29 @@ void LPD8806::updatePins(uint8_t dpin, uint8_t cpin) {
 
 // Enable SPI hardware and set up protocol details:
 void LPD8806::startSPI(void) {
-  SPI.begin();
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setDataMode(SPI_MODE0);
+  // SPI.begin();
+  // SPI.setBitOrder(MSBFIRST);
+  // SPI.setDataMode(SPI_MODE0);
 
-  SPI.setClockDivider(SPI_CLOCK_DIV8);  // 2 MHz
+  // SPI.setClockDivider(SPI_CLOCK_DIV8);  // 2 MHz
   // SPI bus is run at 2MHz.  Although the LPD8806 should, in theory,
   // work up to 20MHz, the unshielded wiring from the Arduino is more
   // susceptible to interference.  Experiment and see what you get.
 
-#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) || defined (__AVR_ATmega328__) || defined(__AVR_ATmega8__) || (__AVR_ATmega1281__) || defined(__AVR_ATmega2561__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
+// #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) || defined (__AVR_ATmega328__) || defined(__AVR_ATmega8__) || (__AVR_ATmega1281__) || defined(__AVR_ATmega2561__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
 
-  // Issue initial latch/reset to strip:
-  SPDR = 0; // Issue initial byte
-  for(uint16_t i=((numLEDs+31)/32)-1; i>0; i--) {
-    while(!(SPSR & (1<<SPIF))); // Wait for prior byte out
-    SPDR = 0;                   // Issue next byte
-  }
-#else
-  SPI.transfer(0);
-  for(uint16_t i=((numLEDs+31)/32)-1; i>0; i--) {
-    SPI.transfer(0);
-  }
-#endif
+//   // Issue initial latch/reset to strip:
+//   SPDR = 0; // Issue initial byte
+//   for(uint16_t i=((numLEDs+31)/32)-1; i>0; i--) {
+//     while(!(SPSR & (1<<SPIF))); // Wait for prior byte out
+//     SPDR = 0;                   // Issue next byte
+//   }
+// #else
+//   SPI.transfer(0);
+//   for(uint16_t i=((numLEDs+31)/32)-1; i>0; i--) {
+//     SPI.transfer(0);
+//   }
+// #endif
 }
 
 // Enable software SPI pins and issue initial latch:
@@ -225,16 +226,7 @@ void LPD8806::show(void) {
   // This doesn't need to distinguish among individual pixel color
   // bytes vs. latch data, etc.  Everything is laid out in one big
   // flat buffer and issued the same regardless of purpose.
-  if(hardwareSPI) {
-    while(i--) {
-#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) || defined (__AVR_ATmega328__) || defined(__AVR_ATmega8__) || (__AVR_ATmega1281__) || defined(__AVR_ATmega2561__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
-      while(!(SPSR & (1<<SPIF))); // Wait for prior byte out
-      SPDR = *ptr++;              // Issue new byte
-#else
-      SPI.transfer(*ptr++);
-#endif
-    }
-  } else {
+
     uint8_t p, bit;
 
     while(i--) {
