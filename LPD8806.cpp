@@ -246,7 +246,6 @@ void LPD8806::show(void) {
       }
     }
   }
-}
 
 // Convert separate R,G,B into combined 32-bit GRB color:
 uint32_t LPD8806::Color(byte r, byte g, byte b) {
